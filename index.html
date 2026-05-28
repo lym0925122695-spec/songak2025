@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 송악고 과목 선택 시뮬레이터</title>
+    
+    <script>
+        (function() {
+            var userAgent = navigator.userAgent.toLowerCase();
+            var targetUrl = window.location.href;
+            
+            // 카카오톡 내에서 링크를 클릭했을 경우에만 발동
+            if (userAgent.match(/kakaotalk/i)) {
+                // 카카오톡 전용 외부 브라우저 호출 앱스킴 발사
+                window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(targetUrl);
+            }
+        })();
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #ebf1f6;
+            --navy-header: #0d2e5c;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --accent-orange: #f59e0b;
+            --btn-green: #10b981;
+            --border-light: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, 'Malgun Gothic', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* 상단 네이비 바 UI */
+        header {
+            background-color: var(--navy-header);
+            color: white; padding: 15px 30px; display: flex;
+            justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        header .title-area h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+        header .title-area p { font-size: 0.85rem; color: #94a3b8; margin-top: 2px; }
+        
+        .header-inputs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .header-inputs select, .header-inputs input {
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none; transition: all 0.2s;
+        }
+        .header-inputs select option { color: black; }
+        .header-inputs input::placeholder { color: #94a3b8; }
+
+        /* 학년 변경 및 모바일 전용 탭 컨트롤러 */
+        .tab-bar {
+            background: white; border-bottom: 1px solid var(--border-light);
+            display: flex; padding-left: 30px; gap: 10px; z-index: 10;
+        }
+        .tab-btn {
+            border: none; background: none; padding: 15px 20px; font-size: 0.95rem;
+            font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .tab-btn.active { color: var(--navy-header); }
+        .tab-btn.active::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--navy-header);
+        }
+
+        /* 모바일 뷰 전용 토글 스위치 (PC 해제) */
+        .mobile-view-toggle { display: none; background: #fff; border-bottom: 1px solid var(--border-light); padding: 10px 20px; gap: 10px; }
+        .view-toggle-btn { flex: 1; padding: 10px; border: 1px solid var(--border-light); background: #f8fafc; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; text-align: center; }
+        .view-toggle-btn.active { background: var(--navy-header); color: white; border-color: var(--navy-header); }
+
+        /* 메인 레이아웃 프레임 구조 */
+        main { display: flex; flex: 1; overflow: hidden; padding: 20px 30px; gap: 25px; }
+
+        /* 좌측 선택 영역 패널 */
+        .selection-panel {
+            width: 45%; display: flex; flex-direction: column; gap: 20px;
+            overflow-y: auto; padding-right: 10px;
+        }
+        .tab-content { display: none; flex-direction: column; gap: 25px; }
+        .tab-content.active { display: flex; }
+
+        .group-container {
+            background: var(--card-bg); border-radius: 12px; padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02);
+        }
+        .group-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .group-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+        .group-status-badge {
+            background: #fffbeb; color: #b45309; font-size: 0.8rem;
+            font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid #fde68a;
+        }
+        .group-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; }
+
+        /* 과목 디자인 카드 */
+        .subject-card {
+            background: white; border: 1px solid var(--border-light); border-radius: 10px;
+            padding: 15px 20px; margin-bottom: 10px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .subject-card:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .subject-card.selected { border-color: #3b82f6; background: #f0f6ff; }
+        .subject-card.locked { background-color: #f8fafc; opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+        .subject-card.locked:hover { transform: none; box-shadow: none; border-color: var(--border-light); }
+        
+        .sub-name { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+        .sub-details { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .circle-indicator {
+            width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1;
+            position: relative; transition: all 0.2s; background: white;
+        }
+        .subject-card.selected .circle-indicator { border-color: #3b82f6; background: #3b82f6; }
+        .subject-card.selected .circle-indicator::after {
+            content: ''; position: absolute; width: 6px; height: 10px;
+            border: solid white; border-width: 0 2px 2px 0; top: 3px; left: 6px; transform: rotate(45deg);
+        }
+
+        /* 우측 이수계획 리포트 영역 */
+        .preview-panel {
+            width: 55%; display: flex; flex-direction: column; gap: 15px; height: 100%;
+        }
+
+        /* 스크롤 가상 뷰 독립처리 */
+        .capture-scroll-wrapper {
+            overflow-y: auto; flex: 1; border-radius: 12px; border: 1px solid var(--border-light);
+        }
+
+        #capture-area {
+            background: #f8fafc; padding: 20px; display: flex; flex-direction: column; gap: 15px; min-height: 100%;
+        }
+
+        /* 대시보드 뷰 컴포넌트 */
+        .dashboard {
+            background: white; border-radius: 12px; padding: 15px 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;
+        }
+        .dashboard-left { display: flex; align-items: center; gap: 15px; }
+        .progress-circle {
+            width: 54px; height: 54px; border-radius: 50%; background: #f1f5f9;
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: #0f172a;
+            border: 3px solid #e2e8f0;
+        }
+        .dash-text .title { font-weight: 700; font-size: 1rem; margin-bottom: 2px; }
+        .dash-text .desc { font-size: 0.85rem; color: var(--text-muted); }
+        
+        .btn-submit {
+            background-color: var(--btn-green); color: white; border: none; padding: 12px 22px;
+            border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(16,185,129,0.2); transition: background 0.2s;
+        }
+        .btn-submit:hover { background-color: #059669; }
+
+        /* 세련된 표 양식 시스템 */
+        .plan-section { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 10px; }
+        .plan-section-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; color: #0f172a; }
+        .plan-section-title span.sub { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
+
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; table-layout: fixed; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px 4px; word-break: keep-all; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 0.75rem; }
+        
+        td.slot-empty { color: #a1a1aa; font-style: italic; background-color: #ffffff; border: 1px dashed #cbd5e1; }
+        td.slot-filled { color: #1e293b; font-weight: 700; background-color: #f0f6ff !important; border: 1px solid #bfdbfe; }
+        .fixed-cell { background-color: #f8fafc; color: #334155; }
+        .alert-footer { font-size: 0.75rem; text-align: center; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
+
+        /* 📱 초강력 모바일 화면 대응 반응형 쿼리 */
+        @media (max-width: 900px) {
+            header { padding: 12px 15px; flex-direction: column; align-items: flex-start; gap: 10px; }
+            header .title-area h1 { font-size: 1.2rem; }
+            .header-inputs { width: 100%; gap: 6px; }
+            .header-inputs select, .header-inputs input { flex: 1; min-width: 110px; padding: 6px 10px; font-size: 0.8rem; }
+            .tab-bar { padding-left: 10px; }
+            .tab-btn { padding: 12px 12px; font-size: 0.85rem; }
+            
+            .mobile-view-toggle { display: flex; }
+            main { padding: 10px; gap: 0; position: relative; }
+            
+            .selection-panel { width: 100%; padding-right: 0; display: none; }
+            .preview-panel { width: 100%; display: none; }
+            
+            body.show-selector .selection-panel { display: flex; }
+            body.show-preview .preview-panel { display: flex; }
+
+            .dashboard { padding: 10px; flex-direction: column; gap: 10px; align-items: stretch; text-align: center; }
+            .dashboard-left { justify-content: center; }
+            .btn-submit { width: 100%; padding: 10px; font-size: 0.9rem; }
+            table { font-size: 0.75rem; }
+            th, td { padding: 6px 2px; }
+        }
+    </style>
+</head>
+<body class="show-selector">
+
+    <header>
+        <div class="title-area">
+            <h1>2026 송악고등학교 과목 선택 시뮬레이터</h1>
+            <p>학생 중심 맞춤형 교육과정 이수 설계 실습 도구</p>
+        </div>
+        <div class="header-inputs">
+            <select id="studentDept" onchange="updateDisplay()"><option value="">희망 학과 계열 선택</option><option value="인문사회계열">인문사회계열</option><option value="상경계열">상경계열</option><option value="자연과학계열">자연과학계열</option><option value="공학계열">공학계열</option><option value="의학생명계열">의학생명계열</option><option value="예체능계열">예체능계열</option></select>
+            <input type="number" id="studentClass" placeholder="반" min="1" max="12" oninput="updateDisplay()">
+            <input type="number" id="studentNumber" placeholder="번호" min="1" max="40" oninput="updateDisplay()">
+            <input type="text" id="studentName" placeholder="이름" oninput="updateDisplay()">
+        </div>
+    </header>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" id="btn-tab-g2" onclick="switchGradeTab('grade2')">🎓 2학년 과목 선택 (1~6)</button>
+        <button class="tab-btn" id="btn-tab-g3" onclick="switchGradeTab('grade3')">🏛 3학년 과목 선택 (7~12)</button>
+    </div>
+
+    <div class="mobile-view-toggle">
+        <div class="view-toggle-btn active" id="toggle-select-btn" onclick="switchMobileView('select')">✍ 과목 고르기</div>
+        <div class="view-toggle-btn" id="toggle-preview-btn" onclick="switchMobileView('preview')">📋 내 계획표 확인</div>
+    </div>
+
+    <main>
+        <div class="selection-panel">
+            <div id="grade2-content" class="tab-content active">
+                <div class="group-container" data-group="1" data-max="3">
+                    <div class="group-info"><div class="group-title">선택군 1 [2학년 1학기 - 택 3]</div><div class="group-status-badge">0 / 3 선택 완료</div></div>
+                    <div class="group-desc">1학기에 수강할 탐구영역(사회/과학) 과목 중 3과목을 선택하세요.</div>
+                    <div class="subject-list" id="g1-list"></div>
+                </div>
+                <div class="group-container" data-group="2" data-max="3">
+                    <div class="group-info"><div class="group-title">선택군 2 [2학년 2학기 - 택 3]</div><div class="group-status-badge">0 / 3 선택 완료</div></div>
+                    <div class="group-desc">2학기에 수강할 탐구영역(사회/과학) 과목 중 3과목을 선택하세요.</div>
+                    <div class="subject-list" id="g2-list"></div>
+                </div>
+                <div class="group-container" data-group="3" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 3 [2학년 1학기 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">1학기에 이수할 제2외국어 일반선택 기초과목을 선택하세요.</div>
+                    <div class="subject-list" id="g3-list"></div>
+                </div>
+                <div class="group-container" data-group="4" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 4 [2학년 2학기 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">2학기에 이수할 제2외국어 진로선택 회화 과목을 선택하세요.</div>
+                    <div class="subject-list" id="g4-list"></div>
+                </div>
+                <div class="group-container" data-group="5" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 5 [2학년 1학기 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">1학기에 이수할 기술·가정/정보 일반선택 과목을 고르세요.</div>
+                    <div class="subject-list" id="g5-list"></div>
+                </div>
+                <div class="group-container" data-group="6" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 6 [2학년 2학기 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">2학기에 이수할 기술·가정/정보 진로선택 과목을 고르세요.</div>
+                    <div class="subject-list" id="g6-list"></div>
+                </div>
+            </div>
+
+            <div id="grade3-content" class="tab-content">
+                <div class="group-container" data-group="7" data-max="5">
+                    <div class="group-info"><div class="group-title">선택군 7 [3학년 1학기 지정형 - 택 5]</div><div class="group-status-badge">0 / 5 선택 완료</div></div>
+                    <div class="group-desc">국영수 대분류 최대 3과목 / 사회과학 대분류 최대 2과목 구성 조건이 적용됩니다.</div>
+                    <div class="subject-list" id="g7-list"></div>
+                </div>
+                <div class="group-container" data-group="8" data-max="5">
+                    <div class="group-info"><div class="group-title">선택군 8 [3학년 2학기 지정형 - 택 5]</div><div class="group-status-badge">0 / 5 선택 완료</div></div>
+                    <div class="group-desc">국영수 대분류 최대 3과목 / 사회과학 대분류 최대 2과목 구성 조건이 적용됩니다.</div>
+                    <div class="subject-list" id="g8-list"></div>
+                </div>
+                <div class="group-container" data-group="9" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 9 [3학년 1학기 기초진로 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">1학기 기초심화 국어/수학/영어 진로선택 과목을 고르세요. (4학점)</div>
+                    <div class="subject-list" id="g9-list"></div>
+                </div>
+                <div class="group-container" data-group="10" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 10 [3학년 2학기 기초진로 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">2학기 기초심화 국어/수학/영어 진로선택 과목을 고르세요. (4학점)</div>
+                    <div class="subject-list" id="g10-list"></div>
+                </div>
+                <div class="group-container" data-group="11" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 11 [3학년 1학기 생활교양 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">1학기에 수강할 생활·교양군 선택 과목을 선택하세요. (2학점)</div>
+                    <div class="subject-list" id="g11-list"></div>
+                </div>
+                <div class="group-container" data-group="12" data-max="1">
+                    <div class="group-info"><div class="group-title">선택군 12 [3학년 2학기 생활교양 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div>
+                    <div class="group-desc">2학기에 수강할 생활·교양군 선택 과목을 선택하세요. (2학점)</div>
+                    <div class="subject-list" id="g12-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <div class="action-bar">
+                <button class="btn-submit" onclick="captureReport()">✓ 선택 완료 및 스크린샷 저장</button>
+            </div>
+            
+            <div class="capture-scroll-wrapper" id="scroll-wrapper">
+                <div id="capture-area">
+                    <div class="dashboard">
+                        <div class="dashboard-left">
+                            <div class="progress-circle" id="circleView">0%</div>
+                            <div class="dash-text">
+                                <div class="title">과목 설계 완료도</div>
+                                <div class="desc">현재 배정 완료 학점: <span id="totalDisplay" style="font-weight:bold; color:#1e3a8a;">92</span> / 174 학점</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="studentCardDisplay" style="font-weight:bold; font-size:1rem; padding: 2px 0 5px 2px; color:var(--navy-header);">학과 계열: 미선택 | 2학년 0반 0번 미입력</div>
+
+                    <div class="plan-section">
+                        <div class="plan-section-title">1학년 이수 현황 (공통지정) <span class="sub">1학기 29학점 / 2학기 29학점 (계 58학점)</span></div>
+                        <table>
+                            <thead>
+                                <tr><th style="width:16%">교과군</th><th>1학기 과목명</th><th style="width:10%">학점</th><th>2학기 과목명</th><th style="width:10%">학점</th><th style="width:14%">합계</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>국어</td><td class="fixed-cell">공통국어 1</td><td>4</td><td class="fixed-cell">공통국어 2</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>수학</td><td class="fixed-cell">공통수학 1</td><td>4</td><td class="fixed-cell">공통수학 2</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>영어</td><td class="fixed-cell">공통영어 1</td><td>4</td><td class="fixed-cell">공통영어 2</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>한국사</td><td class="fixed-cell">한국사 1</td><td>3</td><td class="fixed-cell">한국사 2</td><td>3</td><td>6 학점</td></tr>
+                                <tr><td>사회</td><td class="fixed-cell">통합사회 1</td><td>4</td><td class="fixed-cell">통합사회 2</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>과학</td><td class="fixed-cell">통합과학 1 / 과탐실 1</td><td>5</td><td class="fixed-cell">통합과학 2 / 과탐실 2</td><td>5</td><td>10 학점</td></tr>
+                                <tr><td>체육</td><td class="fixed-cell">체육 1</td><td>2</td><td class="fixed-cell">체육 2</td><td>2</td><td>4 학점</td></tr>
+                                <tr><td>예술</td><td class="fixed-cell">음악(교과)</td><td>3</td><td class="fixed-cell">미술(교과)</td><td>3</td><td>6 학점</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="plan-section">
+                        <div class="plan-section-title">2학년 이수 계획 (학교 지정 필수 + 공통 선택)</div>
+                        <table>
+                            <thead>
+                                <tr><th style="width:16%">교과군</th><th>1학기 이수과목명</th><th style="width:10%">학점</th><th>2학기 이수과목명</th><th style="width:10%">학점</th><th style="width:14%">합계</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>국어</td><td class="fixed-cell">문학</td><td>4</td><td class="fixed-cell">독서와 작문</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>수학</td><td class="fixed-cell">대수</td><td>4</td><td class="fixed-cell">미적분 Ⅰ</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>영어</td><td class="fixed-cell">영어 Ⅰ</td><td>4</td><td class="fixed-cell">영어 Ⅱ</td><td>4</td><td>8 학점</td></tr>
+                                <tr><td>체육</td><td class="fixed-cell">스포츠 문학</td><td>1</td><td class="fixed-cell">스포츠 과학</td><td>1</td><td>2 학점</td></tr>
+                                <tr><td>예술</td><td class="fixed-cell">음악 연주와 창작</td><td>2</td><td class="fixed-cell">미술 창작</td><td>2</td><td>4 학점</td></tr>
+                                <tr><td rowspan="3">사회/과학<br>(선택1,2)</td><td id="t2-1-1" class="slot-empty">미선택</td><td>-</td><td id="t2-2-1" class="slot-empty">미선택</td><td>-</td><td rowspan="3" id="t2-sum">-</td></tr>
+                                <tr><td id="t2-1-2" class="slot-empty">미선택</td><td>-</td><td id="t2-2-2" class="slot-empty">미선택</td><td>-</td></tr>
+                                <tr><td id="t2-1-3" class="slot-empty">미선택</td><td>-</td><td id="t2-2-3" class="slot-empty">미선택</td><td>-</td></tr>
+                                <tr><td>제2외국어<br>(선택3,4)</td><td id="t2-1-lang" class="slot-empty">미선택</td><td>-</td><td id="t2-2-lang" class="slot-empty">미선택</td><td>-</td><td id="t2-lang-sum">-</td></tr>
+                                <tr><td>기가/정보<br>(선택5,6)</td><td id="t2-1-tech" class="slot-empty">미선택</td><td>-</td><td id="t2-2-tech" class="slot-empty">미선택</td><td>-</td><td id="t2-tech-sum">-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="plan-section">
+                        <div class="plan-section-title">3학년 이수 계획 (지정형 다중 선택 + 진로/교양 수직 정렬)</div>
+                        <table>
+                            <thead>
+                                <tr><th style="width:16%">교과분류</th><th>1학기 배정 과목명</th><th style="width:10%">학점</th><th>2학기 배정 과목명</th><th style="width:10%">학점</th><th style="width:14%">합계</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>체육</td><td class="fixed-cell">스포츠 생활 1</td><td>2</td><td class="fixed-cell">스포츠 생활 2</td><td>2</td><td>4 학점</td></tr>
+                                <tr><td rowspan="3">지정형<br>국영수<br>(선택7,8)</td><td id="t3-1-k1" class="slot-empty">미선택</td><td>-</td><td id="t3-2-k1" class="slot-empty">미선택</td><td>-</td><td rowspan="3" id="t3-k-sum">-</td></tr>
+                                <tr><td id="t3-1-k2" class="slot-empty">미선택</td><td>-</td><td id="t3-2-k2" class="slot-empty">미선택</td><td>-</td></tr>
+                                <tr><td id="t3-1-k3" class="slot-empty">미선택</td><td>-</td><td id="t3-2-k3" class="slot-empty">미선택</td><td>-</td></tr>
+                                <tr><td rowspan="2">지정형<br>탐구<br>(선택7,8)</td><td id="t3-1-s1" class="slot-empty">미선택</td><td>-</td><td id="t3-2-s1" class="slot-empty">미선택</td><td>-</td><td rowspan="2" id="t3-s-sum">-</td></tr>
+                                <tr><td id="t3-1-s2" class="slot-empty">미선택</td><td>-</td><td id="t3-2-s2" class="slot-empty">미선택</td><td>-</td></tr>
+                                <tr><td>기초진로<br>(선택9,10)</td><td id="t3-1-cs" class="slot-empty">미선택</td><td>-</td><td id="t3-2-cs" class="slot-empty">미선택</td><td>-</td><td id="t3-cs-sum">-</td></tr>
+                                <tr><td>생활교양<br>(선택11,12)</td><td id="t3-1-la" class="slot-empty">미선택</td><td>-</td><td id="t3-2-la" class="slot-empty">미선택</td><td>-</td><td id="t3-la-sum">-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert-footer">▲ 교육부 지침에 의거 교과 이수학점이 최소 174학점 이상을 전면 충족해야 최종 졸업이 허가됩니다.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const subjectsData = {
+            group1: [
+                { id: 'g1_1', name: '세계시민과 지리', type: '사회', credit: 3 },
+                { id: 'g1_2', name: '세계사', type: '사회', credit: 3 },
+                { id: 'g1_3', name: '법과 사회', type: '사회', credit: 3 },
+                { id: 'g1_4', name: '경제', type: '사회', credit: 3 },
+                { id: 'g1_5', name: '윤리와 사상', type: '사회', credit: 3 },
+                { id: 'physics1', name: '물리학 Ⅰ', type: '과학', credit: 3 },
+                { id: 'chemistry1', name: '화학 Ⅰ', type: '과학', credit: 3 },
+                { id: 'bio1', name: '생명과학 Ⅰ', type: '과학', credit: 3 },
+                { id: 'earth1', name: '지구과학 Ⅰ', type: '과학', credit: 3 }
+            ],
+            group2: [
+                { id: 'g2_1', name: '도시의 미래 탐구', type: '사회', credit: 3 },
+                { id: 'g2_2', name: '동아시아 역사기행', type: '사회', credit: 3 },
+                { id: 'g2_3', name: '사회와 문화', type: '사회', credit: 3 },
+                { id: 'g2_4', name: '정치', type: '사회', credit: 3 },
+                { id: 'g2_5', name: '현대사회와 윤리', type: '사회', credit: 3 },
+                { id: 'physics_step2', name: '역사와 에너지', type: '과학', credit: 3, pre_id: 'physics1' },
+                { id: 'chemistry_step2', name: '물질과 에너지', type: '과학', credit: 3, pre_id: 'chemistry1' },
+                { id: 'bio_step2', name: '세포와 물질대사', type: '과학', credit: 3, pre_id: 'bio1' },
+                { id: 'earth_step2', name: '지구시스템과학', type: '과학', credit: 3, pre_id: 'earth1' }
+            ],
+            group3: [
+                { id: 'china1', name: '중국어 Ⅰ', type: '외국어', credit: 3 },
+                { id: 'japan1', name: '일본어 Ⅰ', type: '외국어', credit: 3 }
+            ],
+            group4: [
+                { id: 'china_conv', name: '중국어 회화', type: '외국어', credit: 3, pre_id: 'china1' },
+                { id: 'japan_conv', name: '일본어 회화', type: '외국어', credit: 3, pre_id: 'japan1' }
+            ],
+            group5: [
+                { id: 'tech_home', name: '기술·가정', type: '기가', credit: 3 },
+                { id: 'info_sci', name: '정보', type: '정보', credit: 3 }
+            ],
+            group6: [
+                { id: 'life_sci_exp', name: '생활 과학 탐구', type: '진로', credit: 3, pre_id: 'tech_home' },
+                { id: 'ai_basic', name: '인공지능 기초', type: '진로', credit: 3, pre_id: 'info_sci' }
+            ],
+            group7: [
+                { id: 'g7_1', name: '화법과 언어', type: '국영수', credit: 4 },
+                { id: 'g7_2', name: '확률과 통계', type: '국영수', credit: 4 },
+                { id: 'g7_3', name: '미적분 Ⅱ', type: '국영수', credit: 4 },
+                { id: 'g7_4', name: '영어 독해와 작문', type: '국영수', credit: 4 },
+                { id: 'g7_5', name: '역사로 탐구하는 현대 세계', type: '사과탐', credit: 4 },
+                { id: 'g7_6', name: '사회 문제 탐구', type: '사과탐', credit: 4 },
+                { id: 'g7_7', name: '윤리 문제 탐구', type: '사과탐', credit: 4 },
+                { id: 'g7_8', name: '기후변화와 지속가능한 세계', type: '사과탐', credit: 4 },
+                { id: 'physics_step3', name: '전자기와 양자', type: '사과탐', credit: 4, pre_id: 'physics_step2' },
+                { id: 'chemistry_step3', name: '화학 반응의 세계', type: '사과탐', credit: 4, pre_id: 'chemistry_step2' },
+                { id: 'bio_step3', name: '생물의 유전', type: '사과탐', credit: 4, pre_id: 'bio_step2' },
+                { id: 'earth_step3', name: '행성우주과학', type: '사과탐', credit: 4, pre_id: 'earth_step2' }
+            ],
+            group8: [
+                { id: 'g8_1', name: '문학과 영상', type: '국영수', credit: 4 },
+                { id: 'g8_2', name: '인공지능 수학', type: '국영수', credit: 4 },
+                { id: 'g8_3', name: '심화 영어 독해와 작문', type: '국영수', credit: 4 },
+                { id: 'g8_4', name: '역사로 탐구하는 현대 세계', type: '사과탐', credit: 4 },
+                { id: 'g8_5', name: '사회 문제 탐구', type: '사과탐', credit: 4 },
+                { id: 'g8_6', name: '윤리 문제 탐구', type: '사과탐', credit: 4 },
+                { id: 'g8_7', name: '기후변화와 지속가능한 세계', type: '사과탐', credit: 4 },
+                { id: 'g8_8', name: '과학의 역사와 문화', type: '사과탐', credit: 4 },
+                { id: 'g8_9', name: '기후변화와 환경생태', type: '사과탐', credit: 4 },
+                { id: 'g8_10', name: '융합 과학 탐구', type: '사과탐', credit: 4 }
+            ],
+            group9: [
+                { id: 'g9_1', name: '주제 탐구 독서', type: '기초진로', credit: 4 },
+                { id: 'g9_2', name: '기하', type: '기초진로', credit: 4 },
+                { id: 'g9_3', name: '심화 영어', type: '기초진로', credit: 4 }
+            ],
+            group10: [
+                { id: 'g10_1', name: '독서 토론과 글쓰기', type: '기초진로', credit: 4 },
+                { id: 'g10_2', name: '경제수학', type: '기초진로', credit: 4 },
+                { id: 'g10_3', name: '영미 문학 읽기', type: '기초진로', credit: 4 }
+            ],
+            group11: [
+                { id: 'g11_1', name: '보건', type: '교양', credit: 2 },
+                { id: 'g11_2', name: '생태와 환경', type: '교양', credit: 2 },
+                { id: 'g11_3', name: '인간과 심리', type: '교양', credit: 2 },
+                { id: 'g11_4', name: '인간과 철학', type: '교양', credit: 2 }
+            ],
+            group12: [
+                { id: 'g12_1', name: '보건', type: '교양', credit: 2 },
+                { id: 'g12_2', name: '생태와 환경', type: '교양', credit: 2 },
+                { id: 'g12_3', name: '인간과 심리', type: '교양', credit: 2 },
+                { id: 'g12_4', name: '인간과 철학', type: '교양', credit: 2 }
+            ]
+        };
+
+        const selections = { group1: [], group2: [], group3: [], group4: [], group5: [], group6: [], group7: [], group8: [], group9: [], group10: [], group11: [], group12: [] };
+
+        window.onload = function() {
+            renderAllOptions();
+            updateDisplay();
+            updateTableData();
+        };
+
+        function switchMobileView(viewMode) {
+            document.getElementById('toggle-select-btn').classList.toggle('active', viewMode === 'select');
+            document.getElementById('toggle-preview-btn').classList.toggle('active', viewMode === 'preview');
+            if(viewMode === 'select') {
+                document.body.classList.add('show-selector');
+                document.body.classList.remove('show-preview');
+            } else {
+                document.body.classList.remove('show-selector');
+                document.body.classList.add('show-preview');
+            }
+        }
+
+        function switchGradeTab(gradeId) {
+            document.getElementById('btn-tab-g2').classList.toggle('active', gradeId === 'grade2');
+            document.getElementById('btn-tab-g3').classList.toggle('active', gradeId === 'grade3');
+            document.getElementById('grade2-content').classList.toggle('active', gradeId === 'grade2');
+            document.getElementById('grade3-content').classList.toggle('active', gradeId === 'grade3');
+        }
+
+        function updateDisplay() {
+            const dept = document.getElementById('studentDept').value || '미선택';
+            const cls = document.getElementById('studentClass').value || '0';
+            const num = document.getElementById('studentNumber').value || '0';
+            const name = document.getElementById('studentName').value || '미입력';
+            document.getElementById('studentCardDisplay').innerText = `학과 계열: ${dept} | 2학년 ${cls}반 ${num}번 ${name}`;
+        }
+
+        function renderAllOptions() {
+            Object.keys(subjectsData).forEach(key => {
+                const listContainer = document.getElementById(`${key.replace('roup','').toLowerCase()}-list`);
+                if(!listContainer) return;
+                
+                subjectsData[key].forEach(sub => {
+                    const card = document.createElement('div');
+                    card.className = 'subject-card';
+                    card.id = `card_${sub.id}`;
+                    card.setAttribute('data-id', sub.id);
+                    card.onclick = () => selectCard(key, sub.id, card);
+                    
+                    card.innerHTML = `
+                        <div>
+                            <div class="sub-name">${sub.name}</div>
+                            <div class="sub-details">${sub.type} | ${sub.credit}학점</div>
+                        </div>
+                        <div class="circle-indicator"></div>
+                    `;
+                    listContainer.appendChild(card);
+                });
+            });
+            updateCardLockStates();
+        }
+
+        function updateCardLockStates() {
+            Object.keys(subjectsData).forEach(groupKey => {
+                subjectsData[groupKey].forEach(sub => {
+                    const card = document.getElementById(`card_${sub.id}`);
+                    if(!card) return;
+
+                    if(sub.pre_id) {
+                        let isPreSelected = false;
+                        Object.keys(selections).forEach(k => {
+                            if(selections[k].includes(sub.pre_id)) isPreSelected = true;
+                        });
+
+                        if(!isPreSelected) {
+                            card.classList.add('locked');
+                            if(selections[groupKey].includes(sub.id)) {
+                                selections[groupKey].splice(selections[groupKey].indexOf(sub.id), 1);
+                                card.classList.remove('selected');
+                            }
+                        } else {
+                            card.classList.remove('locked');
+                        }
+                    }
+                });
+            });
+        }
+
+        function selectCard(groupKey, id, element) {
+            if(element.classList.contains('locked')) {
+                const item = subjectsData[groupKey].find(s => s.id === id);
+                let preName = "";
+                Object.keys(subjectsData).forEach(gk => {
+                    const found = subjectsData[gk].find(s => s.id === item.pre_id);
+                    if(found) preName = found.name;
+                });
+                alert(`이 과목은 선행 과목 지정 규정이 적용됩니다.\n[${preName}] 과목을 먼저 선택하셔야 합니다.`);
+                return;
+            }
+
+            const list = selections[groupKey];
+            const max = parseInt(element.closest('.group-container').getAttribute('data-max'));
+            const idx = list.indexOf(id);
+            const item = subjectsData[groupKey].find(s => s.id === id);
+
+            if (idx > -1) {
+                list.splice(idx, 1);
+                element.classList.remove('selected');
+            } else {
+                if (groupKey === 'group1' || groupKey === 'group2') {
+                    if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
+                } else if (groupKey === 'group7' || groupKey === 'group8') {
+                    let k = 0, s = 0;
+                    list.forEach(selId => {
+                        const m = subjectsData[groupKey].find(o => o.id === selId);
+                        if(m.type === '국영수') k++; else s++;
+                    });
+                    if (item.type === '국영수' && k >= 3) { alert('국영수 대분류 영역은 최대 3개까지만 고를 수 있습니다.'); return; }
+                    if (item.type === '사과탐' && s >= 2) { alert('사회/과학 대분류 영역은 최대 2개까지만 고를 수 있습니다.'); return; }
+                } else {
+                    if(list.length >= 1) {
+                        const prevId = list.pop();
+                        const prevCard = element.closest('.group-container').querySelector(`#card_${prevId}`);
+                        if(prevCard) prevCard.classList.remove('selected');
+                    }
+                }
+                list.push(id);
+                element.classList.add('selected');
+            }
+
+            const badge = element.closest('.group-container').querySelector('.group-status-badge');
+            badge.innerText = `${list.length} / ${max} 선택 완료`;
+            
+            updateCardLockStates();
+            updateTableData();
+        }
+
+        function updateTableData() {
+            let t2Count = 0;
+            for(let i=1; i<=3; i++) {
+                t2Count += fillSlot(`t2-1-${i}`, subjectsData.group1, selections.group1[i-1]);
+                t2Count += fillSlot(`t2-2-${i}`, subjectsData.group2, selections.group2[i-1]);
+            }
+            let lang1 = fillSlot('t2-1-lang', subjectsData.group3, selections.group3[0]);
+            let lang2 = fillSlot('t2-2-lang', subjectsData.group4, selections.group4[0]);
+            let tech1 = fillSlot('t2-1-tech', subjectsData.group5, selections.group5[0]);
+            let tech2 = fillSlot('t2-2-tech', subjectsData.group6, selections.group6[0]);
+
+            document.getElementById('t2-sum').innerText = t2Count > 0 ? `${t2Count}학점` : '-';
+            document.getElementById('t2-lang-sum').innerText = (lang1+lang2) > 0 ? `${lang1+lang2}학점` : '-';
+            document.getElementById('t2-tech-sum').innerText = (tech1+tech2) > 0 ? `${tech1+tech2}학점` : '-';
+
+            syncGrade3('group7', 't3-1-k', 't3-1-s');
+            syncGrade3('group8', 't3-2-k', 't3-2-s');
+            let cs1 = fillSlot('t3-1-cs', subjectsData.group9, selections.group9[0]);
+            let cs2 = fillSlot('t3-2-cs', subjectsData.group10, selections.group10[0]);
+            let la1 = fillSlot('t3-1-la', subjectsData.group11, selections.group11[0]);
+            let la2 = fillSlot('t3-2-la', subjectsData.group12, selections.group12[0]);
+
+            let totalSelectCredits = 0;
+            let checkItemsCount = 0; 
+            Object.keys(selections).forEach(k => {
+                checkItemsCount += selections[k].length;
+                selections[k].forEach(id => {
+                    totalSelectCredits += subjectsData[k].find(m => m.id === id).credit;
+                });
+            });
+
+            const totalScore = 92 + totalSelectCredits;
+            document.getElementById('totalDisplay').innerText = totalScore;
+            
+            // 핵심 100% 진행률 동기화 연산 반영 완료
+            const percentage = Math.round((checkItemsCount / 20) * 100);
+            document.getElementById('circleView').innerText = `${percentage}%`;
+
+            let g7K = 0, g7S = 0, g8K = 0, g8S = 0;
+            selections.group7.forEach(id => { if(subjectsData.group7.find(m => m.id === id).type === '국영수') g7K+=4; else g7S+=4; });
+            selections.group8.forEach(id => { if(subjectsData.group8.find(m => m.id === id).type === '국영수') g8K+=4; else g8S+=4; });
+            document.getElementById('t3-k-sum').innerText = (g7K+g8K) > 0 ? `${g7K+g8K}학점` : '-';
+            document.getElementById('t3-s-sum').innerText = (g7S+g8S) > 0 ? `${g7S+g8S}학점` : '-';
+            document.getElementById('t3-cs-sum').innerText = (cs1+cs2) > 0 ? `${cs1+cs2}학점` : '-';
+            document.getElementById('t3-la-sum').innerText = (la1+la2) > 0 ? `${la1+la2}학점` : '-';
+        }
+
+        function fillSlot(id, data, selId) {
+            const cell = document.getElementById(id);
+            const nextCell = cell.nextElementSibling;
+            if(selId) {
+                const item = data.find(m => m.id === selId);
+                cell.innerText = item.name; cell.className = 'slot-filled';
+                if(nextCell && nextCell.tagName === 'TD') nextCell.innerText = item.credit;
+                return item.credit;
+            } else {
+                cell.innerText = '미선택'; cell.className = 'slot-empty';
+                if(nextCell && nextCell.tagName === 'TD') nextCell.innerText = '-';
+                return 0;
+            }
+        }
+
+        function syncGrade3(gk, kp, sp) {
+            const kArr = [], sArr = [];
+            selections[gk].forEach(id => {
+                const item = subjectsData[gk].find(m => m.id === id);
+                if(item.type === '국영수') kArr.push(item); else sArr.push(item);
+            });
+            for(let i=1; i<=3; i++) fillSlot(`${kp}${i}`, kArr, kArr[i-1]?.id);
+            for(let i=1; i<=2; i++) fillSlot(`${sp}${i}`, sArr, sArr[i-1]?.id);
+        }
+
+        function captureReport() {
+            const wrapper = document.getElementById('scroll-wrapper');
+            const target = document.getElementById('capture-area');
+            const name = document.getElementById('studentName').value || '학생';
+            
+            const originalHeight = wrapper.style.height;
+            const originalOverflow = wrapper.style.overflowY;
+            
+            wrapper.style.height = 'auto';
+            wrapper.style.overflowY = 'visible';
+
+            setTimeout(() => {
+                html2canvas(target, { 
+                    scale: 2, 
+                    backgroundColor: '#ebf1f6',
+                    useCORS: true,
+                    windowHeight: target.scrollHeight
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = `2026_송악고_과목선택결과_${name}.png`;
+                    link.click();
+                    
+                    wrapper.style.height = originalHeight;
+                    wrapper.style.overflowY = originalOverflow;
+                });
+            }, 300);
+        }
+    </script>
+</body>
+</html>
