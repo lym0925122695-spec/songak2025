@@ -140,58 +140,69 @@
         .fixed-cell { background-color: #f8fafc; color: #334155; }
         .alert-footer { font-size: 0.75rem; text-align: center; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 
-        /* 모바일 뷰 최적화 (900px 이하) - 윗부분 초압축 버전 */
+        /* 모바일 뷰 최적화 (900px 이하) - 초극강 다이어트 버전 */
         @media (max-width: 900px) {
-            /* 1. 상단 네이비 헤더: 여백과 글씨 크기 대폭 축소 */
-            header { padding: 10px 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
-            header .title-area h1 { font-size: 1.1rem; }
-            header .title-area p { font-size: 0.75rem; margin-top: 0; }
+            /* 💡 핵심: 브라우저 상하단 메뉴바 크기를 자동 계산하는 최신 CSS 단위 적용 */
+            body { height: 100dvh; }
+
+            /* 1. 헤더: 부제목 숨기고 여백 최소화 */
+            header { padding: 8px 10px; flex-direction: column; align-items: flex-start; gap: 6px; }
+            header .title-area h1 { font-size: 1rem; letter-spacing: -0.5px; margin: 0; }
+            header .title-area p { display: none; } /* 공간 확보를 위해 모바일에서 부제목 숨김 */
             
-            /* 2. 입력창 5개를 딱 2줄로 압축 (1줄: 학년/반/번호, 2줄: 이름/학과) */
-            .header-inputs { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-            .header-inputs select, .header-inputs input { width: 100%; padding: 6px 8px; font-size: 0.85rem; height: 36px; }
+            /* 2. 입력칸: 높이와 간격 극한으로 줄임 */
+            .header-inputs { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+            .header-inputs select, .header-inputs input { width: 100%; padding: 4px 6px; font-size: 0.8rem; height: 30px; }
             #studentGrade { grid-column: 1 / 2; }
             #studentClass { grid-column: 2 / 3; }
             #studentNumber { grid-column: 3 / 4; }
             #studentName { grid-column: 1 / 2; }
-            #studentDept { grid-column: 2 / 4; } /* 학과 선택창을 길게 배치 */
+            #studentDept { grid-column: 2 / 4; }
 
-            /* 3. 상단 탭 버튼: 위아래 뚱뚱한 여백 다이어트 */
-            .tab-bar, #sub-grade-tab-bar { overflow-x: auto; white-space: nowrap; padding-left: 10px; padding-right: 10px; -webkit-overflow-scrolling: touch; }
+            /* 3. 탭 메뉴: 텍스트 크기와 패딩 다이어트 (HTML 인라인 스타일 덮어쓰기 위해 !important 사용) */
+            .tab-bar { padding-left: 5px; padding-right: 5px; }
+            #sub-grade-tab-bar { padding-left: 5px; }
+            .tab-bar, #sub-grade-tab-bar { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
             .tab-bar::-webkit-scrollbar { display: none; }
-            .tab-btn { padding: 10px 12px; font-size: 0.9rem; } /* 기존 15px에서 10px로 축소 */
+            .tab-btn { padding: 8px 10px; font-size: 0.85rem; }
+            #btn-tab-g2, #btn-tab-g3 { padding: 6px 10px !important; font-size: 0.8rem !important; }
 
-            /* 4. 모바일 화면 전환 버튼: 얇게 축소 */
-            .mobile-view-toggle { display: flex; padding: 8px 12px; gap: 8px; }
-            .view-toggle-btn { padding: 8px; font-size: 0.85rem; }
+            /* 4. 모바일 화면 전환 버튼: 최대한 얇게 */
+            .mobile-view-toggle { display: flex; padding: 5px 10px; gap: 5px; border-bottom: none; }
+            .view-toggle-btn { padding: 6px; font-size: 0.8rem; }
 
-            /* 5. 본문 및 하단 여백: 하단 여백을 살짝만 주어 화면 낭비 방지 */
+            /* 5. 본문: 스크롤 영역 극대화 */
             main { 
-                padding: 10px; 
+                padding: 5px 10px; 
                 gap: 0; 
                 flex-direction: column; 
                 overflow-y: auto; 
-                padding-bottom: calc(40px + env(safe-area-inset-bottom)); 
+                padding-bottom: calc(30px + env(safe-area-inset-bottom)); 
             }
             
+            /* 패널 전환 설정 */
             .selection-panel { width: 100%; padding-right: 0; display: none; height: auto; }
             .preview-panel { width: 100%; display: none; height: auto; }
             body.show-selector .selection-panel { display: flex; }
             body.show-preview .preview-panel { display: flex; }
             
-            .dashboard { flex-direction: column; gap: 10px; padding: 12px; text-align: center; }
-            .dashboard-left { flex-direction: column; justify-content: center; gap: 10px; }
-            .btn-submit { width: 100%; padding: 12px; font-size: 1rem; }
+            /* 대시보드 및 버튼 크기 축소 */
+            .dashboard { flex-direction: column; gap: 8px; padding: 10px; text-align: center; }
+            .dashboard-left { flex-direction: column; justify-content: center; gap: 8px; }
+            .btn-submit { width: 100%; padding: 10px; font-size: 0.95rem; }
 
-            /* 표 스와이프 기능 유지 및 과목 카드 날씬하게 조정 */
-            .plan-section { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px 8px; margin-bottom: 8px; }
+            /* 표(Table) 가로 스와이프 및 크기 축소 */
+            .plan-section { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 10px 5px; margin-bottom: 8px; }
             .dept-info-row { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            table { min-width: 600px; }
-            th, td { padding: 8px 4px; font-size: 0.8rem; }
+            table { min-width: 500px; }
+            th, td { padding: 6px 4px; font-size: 0.75rem; }
             
-            /* 과목 카드 터치 영역은 유지하되 위아래 여백을 줄여 한 화면에 많이 보이게 함 */
-            .subject-card { padding: 12px 15px; margin-bottom: 8px; }
-            .sub-name { font-size: 1rem; margin-bottom: 2px; }
+            /* 과목 선택 카드 및 박스 여백 압축 */
+            .group-container { padding: 12px 10px; margin-bottom: 8px; }
+            .group-title { font-size: 0.95rem; }
+            .group-info { margin-bottom: 6px; }
+            .subject-card { padding: 10px 12px; margin-bottom: 6px; }
+            .sub-name { font-size: 0.95rem; margin-bottom: 2px; }
         }
     </style>
 </head>
