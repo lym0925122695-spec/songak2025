@@ -141,18 +141,49 @@
         .alert-footer { font-size: 0.75rem; text-align: center; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 
         @media (max-width: 900px) {
-            header { padding: 12px 15px; flex-direction: column; align-items: flex-start; gap: 10px; }
-            .header-inputs { width: 100%; gap: 6px; }
-            .header-inputs select, .header-inputs input { flex: 1; min-width: 110px; padding: 6px 10px; font-size: 0.8rem; }
-            .mobile-view-toggle { display: flex; }
-            main { padding: 10px; gap: 0; }
-            .selection-panel { width: 100%; padding-right: 0; display: none; }
-            .preview-panel { width: 100%; display: none; }
+            header { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
+            
+            /* 상단 입력창 터치 편하게 넓히기 */
+            .header-inputs { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+            #studentName { grid-column: 1 / 4; }
+            #studentDept { grid-column: 1 / 4; }
+            .header-inputs select, .header-inputs input { width: 100%; padding: 10px; font-size: 0.95rem; }
+
+            /* 탭 메뉴 가로 스크롤 허용 */
+            .tab-bar, #sub-grade-tab-bar { overflow-x: auto; white-space: nowrap; padding-left: 15px; padding-right: 15px; -webkit-overflow-scrolling: touch; }
+            .tab-bar::-webkit-scrollbar { display: none; }
+
+            .mobile-view-toggle { display: flex; padding: 10px 15px; }
+            .view-toggle-btn { padding: 12px; font-size: 0.95rem; }
+
+            /* ⭐️ 모바일 하단 여백 확보 (아이폰 안전영역 포함) ⭐️ */
+            main { 
+                padding: 10px; 
+                gap: 0; 
+                flex-direction: column; 
+                overflow-y: auto; 
+                padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
+            }
+            
+            /* 패널 및 버튼 크기 조정 */
+            .selection-panel { width: 100%; padding-right: 0; display: none; height: auto; }
+            .preview-panel { width: 100%; display: none; height: auto; }
             body.show-selector .selection-panel { display: flex; }
             body.show-preview .preview-panel { display: flex; }
-            .dashboard { flex-direction: column; gap: 10px; text-align: center; }
-            .dashboard-left { justify-content: center; }
-            .btn-submit { width: 100%; }
+            
+            .dashboard { flex-direction: column; gap: 15px; text-align: center; }
+            .dashboard-left { flex-direction: column; justify-content: center; }
+            .btn-submit { width: 100%; padding: 15px; font-size: 1.05rem; }
+
+            /* 표(Table) 가로 스와이프 설정 */
+            .plan-section { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 15px 10px; }
+            .dept-info-row { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { min-width: 600px; }
+            th, td { padding: 10px 4px; font-size: 0.85rem; }
+            
+            /* 과목 카드 높이 조정 */
+            .subject-card { padding: 18px 15px; margin-bottom: 12px; }
+            .sub-name { font-size: 1.05rem; }
         }
     </style>
 </head>
@@ -411,10 +442,10 @@
                 { id: 'g1_3', name: '법과 사회', type: '사회', credit: 3 },
                 { id: 'g1_4', name: '경제', type: '사회', credit: 3 },
                 { id: 'g1_5', name: '윤리와 사상', type: '사회', credit: 3 },
-                { id: 'physics1', name: '물리학 Ⅰ', type: '과학', credit: 3 },
-                { id: 'chemistry1', name: '화학 Ⅰ', type: '과학', credit: 3 },
-                { id: 'bio1', name: '생명과학 Ⅰ', type: '과학', credit: 3 },
-                { id: 'earth1', name: '지구과학 Ⅰ', type: '과학', credit: 3 }
+                { id: 'physics1', name: '물리학', type: '과학', credit: 3 },
+                { id: 'chemistry1', name: '화학', type: '과학', credit: 3 },
+                { id: 'bio1', name: '생명과학', type: '과학', credit: 3 },
+                { id: 'earth1', name: '지구과학', type: '과학', credit: 3 }
             ],
             group2: [
                 { id: 'g2_1', name: '도시의 미래 탐구', type: '사회', credit: 3 },
@@ -422,14 +453,14 @@
                 { id: 'g2_3', name: '사회와 문화', type: '사회', credit: 3 },
                 { id: 'g2_4', name: '정치', type: '사회', credit: 3 },
                 { id: 'g2_5', name: '현대사회와 윤리', type: '사회', credit: 3 },
-                { id: 'physics_step2', name: '역사와 에너지', type: '과학', credit: 3, pre_id: 'physics1' },
+                { id: 'physics_step2', name: '역학과 에너지', type: '과학', credit: 3, pre_id: 'physics1' },
                 { id: 'chemistry_step2', name: '물질과 에너지', type: '과학', credit: 3, pre_id: 'chemistry1' },
                 { id: 'bio_step2', name: '세포와 물질대사', type: '과학', credit: 3, pre_id: 'bio1' },
                 { id: 'earth_step2', name: '지구시스템과학', type: '과학', credit: 3, pre_id: 'earth1' }
             ],
             group3: [
-                { id: 'china1', name: '중국어 Ⅰ', type: '외국어', credit: 3 },
-                { id: 'japan1', name: '일본어 Ⅰ', type: '외국어', credit: 3 }
+                { id: 'china1', name: '중국어', type: '외국어', credit: 3 },
+                { id: 'japan1', name: '일본어', type: '외국어', credit: 3 }
             ],
             group4: [
                 { id: 'china_conv', name: '중국어 회화', type: '외국어', credit: 3, pre_id: 'china1' },
