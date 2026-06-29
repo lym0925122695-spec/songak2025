@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2026 송악고등학교 과목 선택 시뮬레이터</title>
-    <!-- 스크린샷 저장을 위한 html2canvas 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -85,6 +84,19 @@
         .subject-card:hover { transform: translateY(-2px); border-color: #cbd5e1; }
         .subject-card.selected { border-color: #3b82f6; background: #f0f6ff; }
         .subject-card.locked { background-color: #f8fafc; opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+        
+        /* 필수 과목 고정 스타일 */
+        .subject-card.mandatory {
+            background-color: #eff6ff;
+            border-color: #93c5fd;
+            cursor: not-allowed;
+        }
+        .subject-card.mandatory .sub-details::after {
+            content: ' (학교 지정 필수)';
+            color: #ef4444;
+            font-weight: bold;
+            margin-left: 5px;
+        }
         
         .sub-name { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
         .sub-details { font-size: 0.8rem; color: var(--text-muted); }
@@ -208,19 +220,16 @@
 </head>
 <body class="show-selector">
 
-    <!-- 아이폰용 가이드라인 안내바 -->
     <div id="iphone-safari-guide">
         <span>⚠️ 아이폰 필수: 우측 하단 🧭(나침반) 아이콘을 눌러 Safari 브라우저로 전환해야 사진 저장이 가능합니다.</span>
     </div>
 
-    <!-- 헤더 바 -->
     <header>
         <div class="title-area">
             <h1>2026 송악고등학교 과목 선택 시뮬레이터</h1>
             <p>학생 중심 맞춤형 교육과정 이수 설계 실습 도구</p>
         </div>
         <div class="header-inputs">
-            <!-- 고정 해제: 학생이 학년/반/번호/이름/학과계열을 완전히 자유 배정하도록 정상 복구 -->
             <input type="number" id="studentGrade" placeholder="학년" min="1" max="3" value="2" oninput="updateDisplay()">
             <input type="number" id="studentClass" placeholder="반" min="1" max="12" oninput="updateDisplay()">
             <input type="number" id="studentNumber" placeholder="번호" min="1" max="40" oninput="updateDisplay()">
@@ -229,31 +238,25 @@
         </div>
     </header>
 
-    <!-- 대메뉴 메인 상단 탭 -->
     <div class="tab-bar">
         <button class="tab-btn active" id="main-tab-select" onclick="switchMainTab('select')">✍ 과목 선택 연습</button>
         <button class="tab-btn" id="main-tab-guide" onclick="switchMainTab('guide')">📚 학과별 권장 선택 과목 안내</button>
     </div>
 
-    <!-- 학년 세부 서브 탭 -->
     <div class="tab-bar" id="sub-grade-tab-bar">
         <button class="tab-btn active" id="btn-tab-g2" onclick="switchGradeTab('grade2')" style="font-size:0.85rem; padding:10px 15px;">🎓 2학년 선택과목 (1~6)</button>
         <button class="tab-btn" id="btn-tab-g3" onclick="switchGradeTab('grade3')" style="font-size:0.85rem; padding:10px 15px;">🏛 3학년 선택과목 (7~12)</button>
     </div>
 
-    <!-- 모바일 전용 토글 버튼 -->
     <div class="mobile-view-toggle">
         <div class="view-toggle-btn active" id="toggle-select-btn" onclick="switchMobileView('select')">✍ 화면 입력하기</div>
         <div class="view-toggle-btn" id="toggle-preview-btn" onclick="switchMobileView('preview')">📋 내 계획표 확인</div>
     </div>
 
     <main>
-        <!-- 좌측 선택 패널 영역 -->
         <div class="selection-panel">
             
-            <!-- 탭 1: 과목 선택 콘텐츠 -->
             <div id="main-select-content" style="display: flex; flex-direction: column; width: 100%;">
-                <!-- 2학년 전개 구역 -->
                 <div id="grade2-content" class="tab-content active">
                     <div class="group-container" data-group="1" data-max="3"><div class="group-info"><div class="group-title">선택군 1 [2학년 1학기 탐구 - 택 3]</div><div class="group-status-badge">0 / 3 선택 완료</div></div><div class="subject-list" id="group1-list"></div></div>
                     <div class="group-container" data-group="2" data-max="3"><div class="group-info"><div class="group-title">선택군 2 [2학년 2학기 탐구 - 택 3]</div><div class="group-status-badge">0 / 3 선택 완료</div></div><div class="subject-list" id="group2-list"></div></div>
@@ -262,7 +265,6 @@
                     <div class="group-container" data-group="5" data-max="1"><div class="group-info"><div class="group-title">선택군 5 [2학년 1학기 기가/정보 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div><div class="subject-list" id="group5-list"></div></div>
                     <div class="group-container" data-group="6" data-max="1"><div class="group-info"><div class="group-title">선택군 6 [2학년 2학기 진로기초 - 택 1]</div><div class="group-status-badge">0 / 1 선택 완료</div></div><div class="subject-list" id="group6-list"></div></div>
                 </div>
-                <!-- 3학년 전개 구역 -->
                 <div id="grade3-content" class="tab-content">
                     <div class="group-container" data-group="7" data-max="5"><div class="group-info"><div class="group-title">선택군 7 [3학년 1학기 지정형 - 택 5]</div><div class="group-status-badge">0 / 5 선택 완료</div></div><div class="subject-list" id="group7-list"></div></div>
                     <div class="group-container" data-group="8" data-max="5"><div class="group-info"><div class="group-title">선택군 8 [3학년 2학기 지정형 - 택 5]</div><div class="group-status-badge">0 / 5 선택 완료</div></div><div class="subject-list" id="group8-list"></div></div>
@@ -273,7 +275,6 @@
                 </div>
             </div>
 
-            <!-- 탭 2: 학과별 가이드 안내 콘텐츠 구역 -->
             <div id="main-guide-content" class="dept-guide-container" style="display: none;">
                 <div class="dept-select-box">
                     <label style="font-weight: bold; color: var(--navy-header);">계열별 탐색 학과 선택 : </label>
@@ -342,7 +343,6 @@
 
                     <div id="studentCardDisplay" style="font-weight:bold; font-size:1rem; padding: 2px 0 5px 2px; color:var(--navy-header);">2학년 0반 0번 미입력</div>
 
-                    <!-- 1학년 테이블 -->
                     <div class="plan-section">
                         <div class="plan-section-title">1학년 이수 현황 (공통지정) <span class="sub">1학기 29학점 / 2학기 29학점 (계 58학점)</span></div>
                         <table>
@@ -362,7 +362,6 @@
                         </table>
                     </div>
 
-                    <!-- 2학년 테이블 -->
                     <div class="plan-section">
                         <div class="plan-section-title">2학년 이수 계획 (학교 지정 필수 + 공통 선택)</div>
                         <table>
@@ -384,7 +383,6 @@
                         </table>
                     </div>
 
-                    <!-- 3학년 테이블 -->
                     <div class="plan-section">
                         <div class="plan-section-title">3학년 이수 계획 (지정형 다중 선택 + 진로/교양 수직 정렬)</div>
                         <table>
@@ -415,6 +413,7 @@
             document.getElementById('iphone-safari-guide').style.display = 'flex';
         }
 
+        // 👇 여기서부터 복사해서 추가해 주세요! (실수로 누락되었던 탭 전환 함수 복구)
         function switchMainTab(mode) {
             document.getElementById('main-tab-select').classList.toggle('active', mode === 'select');
             document.getElementById('main-tab-guide').classList.toggle('active', mode === 'guide');
@@ -443,6 +442,7 @@
             document.getElementById('grade2-content').classList.toggle('active', gradeId === 'grade2');
             document.getElementById('grade3-content').classList.toggle('active', gradeId === 'grade3');
         }
+        // 👆 여기까지 추가해 주시면 됩니다.
 
         function updateDisplay() {
             const grade = document.getElementById('studentGrade').value || '0';
@@ -497,7 +497,7 @@
                 { id: 'g7_1', name: '화법과 언어', type: '국영수', credit: 4 },
                 { id: 'g7_2', name: '확률과 통계', type: '국영수', credit: 4 },
                 { id: 'g7_3', name: '미적분 Ⅱ', type: '국영수', credit: 4 },
-                { id: 'g7_4', name: '영어 독해와 작문', type: '국영수', credit: 4 },
+                { id: 'g7_4', name: '심화 영어', type: '국영수', credit: 4 },
                 { id: 'g7_5', name: '역사로 탐구하는 현대 세계', type: '사과탐', credit: 4 },
                 { id: 'g8_6', name: '금융과 경제생활', type: '사과탐', credit: 4 },
                 { id: 'g7_7', name: '사회 문제 탐구', type: '사과탐', credit: 4 },
@@ -511,7 +511,7 @@
             group8: [
                 { id: 'g8_1', name: '문학과 영상', type: '국영수', credit: 4 },
                 { id: 'g8_2', name: '인공지능 수학', type: '국영수', credit: 4 },
-                { id: 'g8_3', name: '심화 영어 독해와 작문', type: '국영수', credit: 4 },
+                { id: 'g8_3', name: '세계 문화와 영어', type: '국영수', credit: 4 },
                 { id: 'g8_4', name: '역사로 탐구하는 현대 세계', type: '사과탐', credit: 4 },
                 { id: 'g8_5', name: '금융과 경제생활', type: '사과탐', credit: 4 },
                 { id: 'g8_6', name: '사회 문제 탐구', type: '사과탐', credit: 4 },
@@ -525,12 +525,12 @@
             group9: [
                 { id: 'g9_1', name: '주제 탐구 독서', type: '기초진로', credit: 4 },
                 { id: 'g9_2', name: '기하', type: '기초진로', credit: 4 },
-                { id: 'g9_3', name: '심화 영어', type: '기초진로', credit: 4 }
+                { id: 'g9_3', name: '영어 독해와 작문', type: '기초진로', credit: 4 }
             ],
             group10: [
                 { id: 'g10_1', name: '독서 토론과 글쓰기', type: '기초진로', credit: 4 },
                 { id: 'g10_2', name: '경제수학', type: '기초진로', credit: 4 },
-                { id: 'g10_3', name: '영미 문학 읽기', type: '기초진로', credit: 4 }
+                { id: 'g10_3', name: '심화 영어 독해와 작문', type: '기초진로', credit: 4 }
             ],
             group11: [
                 { id: 'g11_1', name: '보건', type: '교양', credit: 2 },
@@ -797,7 +797,7 @@
                 { category: "영어/사회", general: ["영어 Ⅰ", "영어 Ⅱ", "영어 독해와 작문", "현대사회와 윤리", "사회와 문화"], jinro: ["경제", "법과 사회"], yonghab: ["사회문제 탐구", "금융과 경제생활", "윤리문제 탐구"] },
                 { category: "정보/교양", general: ["기술·가정", "정보"], jinro: ["인공지능 기초", "데이터 과학", "교육의 이해"], yonghab: ["소프트웨어와 생활", "논술"] }
             ]},
-            "교육학과": { cluster: "사범 계열", desc: "교육사상 교수방법 행정 철학 평생교육 전문가 교원 양성 학과", basic: "교직이론(교육과정, 교육심리, 교육 방법 및 교육공학, 교육평가 등)", major: "교육과정, 교수학습방법론, 교육평가론, 교육사상사, 교육정책, 평생교육론", similar: "교육학과, border-light공학과, 교육심리학과, 교육행정학과 등", career: "교육청·교육연구기관 연구직, 교사, 교육행정직, 교육컨설턴트 등", subjects: [
+            "교육학과": { cluster: "사범 계열", desc: "교육사상 교수방법 행정 철학 평생교육 전문가 교원 양성 학과", basic: "교직이론(교육과정, 교육심리, 교육 방법 및 교육공학, 교육평가 등)", major: "교육과정, 교수학습방법론, 교육평가론, 교육사상사, 교육정책, 평생교육론", similar: "교육학과, 교육공학과, 교육심리학과, 교육행정학과 등", career: "교육청·교육연구기관 연구직, 교사, 교육행정직, 교육컨설턴트 등", subjects: [
                 { category: "국어/수학", general: ["화법과 언어", "독서와 작문", "문학", "대수", "미적분 Ⅰ", "확률과 통계"], jinro: [], yonghab: [] },
                 { category: "영어/사회", general: ["영어 Ⅰ", "영어 Ⅱ", "영어 독해와 작문", "사회와 문화", "현대사회와 윤리"], jinro: [], yonghab: ["사회문제 탐구", "윤리문제 탐구"] },
                 { category: "교양", general: [], jinro: ["교육의 이해"], yonghab: ["논술"] }
@@ -1055,71 +1055,51 @@
             ]}
         };
 
-        // 👇 여기에 새로 추가해 주세요! (학생이 선택한 과목을 담아둘 객체입니다)
+        // 1. selections 객체: group7에 g7_1(화법과 언어)과 g7_2(확률과 통계)를 기본값으로 넣어둡니다.
         const selections = {
             group1: [], group2: [], group3: [], group4: [], group5: [], group6: [],
-            group7: [], group8: [], group9: [], group10: [], group11: [], group12: []
+            group7: ['g7_1', 'g7_2'], 
+            group8: [], group9: [], group10: [], group11: [], group12: []
         };
 
-        // 🚀 고정 해결 드라이버: 이제 과목 리스트와 130개 학과 명단을 동시에 셋온합니다.
         window.onload = function() {
-            renderAllOptions();  // 과목 그리기 작동
-            initDeptSelector();  // 130개 학과 목록 집어넣기 시스템 작동
+            renderAllOptions();  
+            initDeptSelector();  
             updateDisplay();
             updateTableData();
         };
 
-        function switchMainTab(mode) {
-            document.getElementById('main-tab-select').classList.toggle('active', mode === 'select');
-            document.getElementById('main-tab-guide').classList.toggle('active', mode === 'guide');
-            
-            if(mode === 'select') {
-                document.getElementById('main-select-content').style.display = 'flex';
-                document.getElementById('sub-grade-tab-bar').style.display = 'flex';
-                document.getElementById('main-guide-content').style.display = 'none';
-            } else {
-                document.getElementById('main-select-content').style.display = 'none';
-                document.getElementById('sub-grade-tab-bar').style.display = 'none';
-                document.getElementById('main-guide-content').style.display = 'flex';
-            }
-        }
-
-        function switchMobileView(viewMode) {
-            document.getElementById('toggle-select-btn').classList.toggle('active', viewMode === 'select');
-            document.getElementById('toggle-preview-btn').classList.toggle('active', viewMode === 'preview');
-            document.body.classList.toggle('show-selector', viewMode === 'select');
-            document.body.classList.toggle('show-preview', viewMode === 'preview');
-        }
-
-        function switchGradeTab(gradeId) {
-            document.getElementById('btn-tab-g2').classList.toggle('active', gradeId === 'grade2');
-            document.getElementById('btn-tab-g3').classList.toggle('active', gradeId === 'grade3');
-            document.getElementById('grade2-content').classList.toggle('active', gradeId === 'grade2');
-            document.getElementById('grade3-content').classList.toggle('active', gradeId === 'grade3');
-        }
-
-        function updateDisplay() {
-            const grade = document.getElementById('studentGrade').value || '0';
-            const cls = document.getElementById('studentClass').value || '0';
-            const num = document.getElementById('studentNumber').value || '0';
-            const name = document.getElementById('studentName').value || '미입력';
-            const dept = document.getElementById('studentDept').value || '미선택';
-            document.getElementById('studentCardDisplay').innerText = `학과 계열: ${dept} | ${grade}학년 ${cls}반 ${num}번 ${name}`;
-        }
-
+        // 2. renderAllOptions 업데이트: 필수 과목을 초기 렌더링 시 고정하고 배지 숫자를 맞춥니다.
         function renderAllOptions() {
             Object.keys(subjectsData).forEach(key => {
                 const listContainer = document.getElementById(`${key}-list`);
                 if(!listContainer) return;
                 listContainer.innerHTML = '';
+                
                 subjectsData[key].forEach(sub => {
                     const card = document.createElement('div');
-                    card.className = 'subject-card'; card.id = `card_${sub.id}`;
+                    card.className = 'subject-card'; 
+                    card.id = `card_${sub.id}`;
                     card.setAttribute('data-id', sub.id);
+
+                    // group7의 필수 과목 2개는 강제 선택 및 mandatory 클래스 부여
+                    if (key === 'group7' && (sub.id === 'g7_1' || sub.id === 'g7_2')) {
+                        card.classList.add('selected', 'mandatory');
+                    } else if (selections[key].includes(sub.id)) {
+                        card.classList.add('selected'); // 혹시 다른 탭 이동 시 선택 상태 유지
+                    }
+
                     card.onclick = () => selectCard(key, sub.id, card);
                     card.innerHTML = `<div><div class="sub-name">${sub.name}</div><div class="sub-details">${sub.type} | ${sub.credit}학점</div></div><div class="circle-indicator"></div>`;
                     listContainer.appendChild(card);
                 });
+
+                // 초기 렌더링 시 우측 상단 배지(n / max) 숫자 동기화
+                const container = listContainer.closest('.group-container');
+                if (container) {
+                    const max = container.getAttribute('data-max');
+                    container.querySelector('.group-status-badge').innerText = `${selections[key].length} / ${max} 선택 완료`;
+                }
             });
             updateCardLockStates();
         }
@@ -1144,6 +1124,7 @@
             });
         }
 
+        // 3. selectCard 업데이트: 선택 제한 세부 규칙 적용 및 필수 과목 클릭 방어
         function selectCard(groupKey, id, element) {
             if(element.classList.contains('locked')) {
                 const item = subjectsData[groupKey].find(s => s.id === id);
@@ -1156,6 +1137,12 @@
                 return;
             }
 
+            // 필수 지정 과목 클릭 시 해제 알림
+            if(element.classList.contains('mandatory')) {
+                alert('이 과목은 학교 지정 필수 과목이므로 취소할 수 없습니다.');
+                return;
+            }
+
             const list = selections[groupKey];
             const max = parseInt(element.closest('.group-container').getAttribute('data-max'));
             const idx = list.indexOf(id);
@@ -1164,17 +1151,47 @@
             if (idx > -1) {
                 list.splice(idx, 1); element.classList.remove('selected');
             } else {
-                if (groupKey === 'group1' || groupKey === 'group2') {
-                    if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
-                } else if (groupKey === 'group7' || groupKey === 'group8') {
+                // group7 세부 규칙 적용
+                if (groupKey === 'group7') {
+                    let mathEngCount = 0; // 미적분 Ⅱ, 심화 영어 카운트
+                    let scienceCount = 0; // 사과탐 카운트
+                    
+                    list.forEach(selId => {
+                        if (selId === 'g7_3' || selId === 'g7_4') mathEngCount++;
+                        const m = subjectsData[groupKey].find(o => o.id === selId);
+                        if (m && m.type === '사과탐') scienceCount++;
+                    });
+
+                    if ((item.id === 'g7_3' || item.id === 'g7_4') && mathEngCount >= 1) {
+                        alert('미적분 Ⅱ와 심화 영어 중에서는 1개만 선택할 수 있습니다.');
+                        return;
+                    }
+                    if (item.type === '사과탐' && scienceCount >= 2) {
+                        alert('사회/과학 탐구 영역은 최대 2개까지만 고를 수 있습니다.');
+                        return;
+                    }
+                    if (list.length >= max) { 
+                        alert(`최대 ${max}과목까지만 선택 가능합니다.`); 
+                        return; 
+                    }
+                } 
+                // 기존 group8 규칙 유지
+                else if (groupKey === 'group8') {
                     let k = 0, s = 0;
                     list.forEach(selId => {
                         const m = subjectsData[groupKey].find(o => o.id === selId);
                         if(m.type === '국영수') k++; else s++;
                     });
-                    if (item.type === '국영수' && k >= 3) { alert('국영수 대분류 영역은 최대 3개까지만 고를 수 있습니다.'); return; }
+                    if (item.type === '국영수' && k >= 3) { alert('국영수 영역은 최대 3개까지만 고를 수 있습니다.'); return; }
                     if (item.type === '사과탐' && s >= 2) { alert('사회/과학 대분류 영역은 최대 2개까지만 고를 수 있습니다.'); return; }
-                } else {
+                    if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
+                }
+                // 그룹 1, 2 일반 복수 선택
+                else if (groupKey === 'group1' || groupKey === 'group2') {
+                    if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
+                } 
+                // 나머지 택 1 그룹들
+                else {
                     if(list.length >= 1) {
                         const prevId = list.pop();
                         const prevCard = element.closest('.group-container').querySelector(`#card_${prevId}`);
