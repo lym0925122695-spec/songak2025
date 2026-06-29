@@ -1059,7 +1059,8 @@
         const selections = {
             group1: [], group2: [], group3: [], group4: [], group5: [], group6: [],
             group7: ['g7_1', 'g7_2'], 
-            group8: [], group9: [], group10: [], group11: [], group12: []
+            group8: ['g8_1', 'g8_2', 'g8_3'], 
+            group9: [], group10: [], group11: [], group12: []
         };
 
         window.onload = function() {
@@ -1085,7 +1086,14 @@
                     // group7의 필수 과목 2개는 강제 선택 및 mandatory 클래스 부여
                     if (key === 'group7' && (sub.id === 'g7_1' || sub.id === 'g7_2')) {
                         card.classList.add('selected', 'mandatory');
-                    } else if (selections[key].includes(sub.id)) {
+                    } 
+                    
+                    // group8 필수 과목 3개 강제 선택 (새로 추가된 부분)
+                    else if (key === 'group8' && (sub.id === 'g8_1' || sub.id === 'g8_2' || sub.id === 'g8_3')) {
+                        card.classList.add('selected', 'mandatory');
+                    }
+                    
+                    else if (selections[key].includes(sub.id)) {
                         card.classList.add('selected'); // 혹시 다른 탭 이동 시 선택 상태 유지
                     }
 
