@@ -1163,8 +1163,8 @@
             } else {
                 // group7 세부 규칙 적용
                 if (groupKey === 'group7') {
-                    let mathEngCount = 0; // 미적분 Ⅱ, 심화 영어 카운트
-                    let scienceCount = 0; // 사과탐 카운트
+                    let mathEngCount = 0; 
+                    let scienceCount = 0; 
                     
                     list.forEach(selId => {
                         if (selId === 'g7_3' || selId === 'g7_4') mathEngCount++;
@@ -1185,11 +1185,10 @@
                         return; 
                     }
                 } 
-
-                // group8 세부 규칙 적용
-                if (groupKey === 'group8') {
-                    let mathEngCount = 0; // 실용 통계, 세계 문화와 영어 카운트
-                    let scienceCount = 0; // 사과탐 카운트
+                // 💡 [수정됨] group8 세부 규칙 적용 (여기서 if가 아닌 else if로 연결해야 합니다)
+                else if (groupKey === 'group8') {
+                    let mathEngCount = 0; 
+                    let scienceCount = 0; 
                     
                     list.forEach(selId => {
                         if (selId === 'g8_3' || selId === 'g8_4') mathEngCount++;
@@ -1210,7 +1209,6 @@
                         return; 
                     }
                 } 
-
                 // 그룹 1, 2 일반 복수 선택
                 else if (groupKey === 'group1' || groupKey === 'group2') {
                     if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
@@ -1291,7 +1289,8 @@
                 if(item.type === '국영수') kArr.push(item); else sArr.push(item);
             });
             for(let i=1; i<=3; i++) fillSlot(`${kp}${i}`, kArr, kArr[i-1]?.id);
-            for(let i=1; i<=2; i++) fillSlot(`${sp}${i}`, sArr, sArr[i-1]?.id);
+            // 💡 [수정됨] 탐구 영역도 슬롯이 3개이므로 i<=2 에서 i<=3 으로 변경
+            for(let i=1; i<=3; i++) fillSlot(`${sp}${i}`, sArr, sArr[i-1]?.id); 
         }
 
         function initDeptSelector() {
