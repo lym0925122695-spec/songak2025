@@ -1136,6 +1136,7 @@
 
         // 3. selectCard 업데이트: 선택 제한 세부 규칙 적용 및 필수 과목 클릭 방어
         function selectCard(groupKey, id, element) {
+            // 1. 선수 과목(locked) 클릭 방지
             if(element.classList.contains('locked')) {
                 const item = subjectsData[groupKey].find(s => s.id === id);
                 let preName = "";
@@ -1147,85 +1148,91 @@
                 return;
             }
 
-            // 필수 지정 과목 클릭 시 해제 알림
+            // 2. 필수 지정 과목 클릭 해제 방지
             if(element.classList.contains('mandatory')) {
                 alert('이 과목은 학교 지정 필수 과목이므로 취소할 수 없습니다.');
                 return;
             }
 
             const list = selections[groupKey];
-            const max = parseInt(element.closest('.group-container').getAttribute('data-max'));
+            // 💡 핵심: HTML에 설정된 최대 선택 개수(data-max)를 가져옵니다.
+            const max = parseInt(element.closest('.group-container').getAttribute('data-max')); 
             const idx = list.indexOf(id);
             const item = subjectsData[groupKey].find(s => s.id === id);
 
+            // 3. 이미 선택된 과목을 다시 누르면 취소(해제)
             if (idx > -1) {
-                list.splice(idx, 1); element.classList.remove('selected');
-            } else {
-                // group7 세부 규칙 적용
-                if (groupKey === 'group7') {
-                    let mathEngCount = 0; 
-                    let scienceCount = 0; 
-                    
-                    list.forEach(selId => {
-                        if (selId === 'g7_3' || selId === 'g7_4') mathEngCount++;
-                        const m = subjectsData[groupKey].find(o => o.id === selId);
-                        if (m && m.type === '사과탐') scienceCount++;
-                    });
-
-                    if ((item.id === 'g7_3' || item.id === 'g7_4') && mathEngCount >= 1) {
-                        alert('미적분 Ⅱ와 심화 영어 중에서는 1개만 선택할 수 있습니다.');
-                        return;
-                    }
-                    if (item.type === '사과탐' && scienceCount >= 3) {
-                        alert('사회/과학 탐구 영역은 최대 3개까지만 고를 수 있습니다.');
-                        return;
-                    }
-                    if (list.length >= max) { 
-                        alert(`최대 ${max}과목까지만 선택 가능합니다.`); 
-                        return; 
-                    }
-                } 
-                // 💡 [수정됨] group8 세부 규칙 적용 (여기서 if가 아닌 else if로 연결해야 합니다)
-                else if (groupKey === 'group8') {
-                    let mathEngCount = 0; 
-                    let scienceCount = 0; 
-                    
-                    list.forEach(selId => {
-                        if (selId === 'g8_3' || selId === 'g8_4') mathEngCount++;
-                        const m = subjectsData[groupKey].find(o => o.id === selId);
-                        if (m && m.type === '사과탐') scienceCount++;
-                    });
-
-                    if ((item.id === 'g8_3' || item.id === 'g8_4') && mathEngCount >= 1) {
-                        alert('실용 통계와 세계 문화와 영어 중에서는 1개만 선택할 수 있습니다.');
-                        return;
-                    }
-                    if (item.type === '사과탐' && scienceCount >= 3) {
-                        alert('사회/과학 탐구 영역은 최대 3개까지만 고를 수 있습니다.');
-                        return;
-                    }
-                    if (list.length >= max) { 
-                        alert(`최대 ${max}과목까지만 선택 가능합니다.`); 
-                        return; 
-                    }
-                } 
-                // 그룹 1, 2 일반 복수 선택
-                else if (groupKey === 'group1' || groupKey === 'group2') {
-                    if (list.length >= max) { alert(`최대 ${max}과목까지만 선택 가능합니다.`); return; }
-                } 
-                // 나머지 택 1 그룹들
-                else {
+                list.splice(idx, 1); 
+                element.classList.remove('selected');
+            } 
+            // 4. 새로운 과목을 선택하는 경우
+            else {
+                // [규칙 A] 단일 선택(택 1) 그룹인 경우: 기존 선택을 빼고 새 과목으로 자동 교체
+                if (max === 1) {
                     if(list.length >= 1) {
                         const prevId = list.pop();
                         const prevCard = element.closest('.group-container').querySelector(`#card_${prevId}`);
                         if(prevCard) prevCard.classList.remove('selected');
                     }
+                } 
+                // [규칙 B] 다중 선택(택 N) 그룹인 경우: 세부 규칙 검사 후 체크 표시 추가
+                else {
+                    // 3학년 1학기 (group7) 세부 규칙 검사
+                    if (groupKey === 'group7') {
+                        let mathEngCount = 0;
+                        let scienceCount = 0;
+                        list.forEach(selId => {
+                            if (selId === 'g7_3' || selId === 'g7_4') mathEngCount++;
+                            const m = subjectsData[groupKey].find(o => o.id === selId);
+                            if (m && m.type === '사과탐') scienceCount++;
+                        });
+
+                        if ((item.id === 'g7_3' || item.id === 'g7_4') && mathEngCount >= 1) {
+                            alert('미적분 Ⅱ와 심화 영어 중에서는 1개만 선택할 수 있습니다.');
+                            return;
+                        }
+                        if (item.type === '사과탐' && scienceCount >= 3) {
+                            alert('사회/과학 탐구 영역은 최대 3개까지만 고를 수 있습니다.');
+                            return;
+                        }
+                    }
+
+                    // 3학년 2학기 (group8) 세부 규칙 검사
+                    if (groupKey === 'group8') {
+                        let mathEngCount = 0;
+                        let scienceCount = 0;
+                        list.forEach(selId => {
+                            if (selId === 'g8_3' || selId === 'g8_4') mathEngCount++;
+                            const m = subjectsData[groupKey].find(o => o.id === selId);
+                            if (m && m.type === '사과탐') scienceCount++;
+                        });
+
+                        if ((item.id === 'g8_3' || item.id === 'g8_4') && mathEngCount >= 1) {
+                            alert('실용 통계와 세계 문화와 영어 중에서는 1개만 선택할 수 있습니다.');
+                            return;
+                        }
+                        if (item.type === '사과탐' && scienceCount >= 3) {
+                            alert('사회/과학 탐구 영역은 최대 3개까지만 고를 수 있습니다.');
+                            return;
+                        }
+                    }
+
+                    // 공통 다중 선택 제한 검사
+                    if (list.length >= max) { 
+                        alert(`최대 ${max}과목까지만 선택 가능합니다.`); 
+                        return; 
+                    }
                 }
-                list.push(id); element.classList.add('selected');
+
+                // 모든 검사를 통과했으면 배열에 추가하고 파란색 체크 표시 부여
+                list.push(id); 
+                element.classList.add('selected');
             }
 
+            // UI 배지(0/N) 및 상태 업데이트 연동
             element.closest('.group-container').querySelector('.group-status-badge').innerText = `${list.length} / ${max} 선택 완료`;
-            updateCardLockStates(); updateTableData();
+            updateCardLockStates(); 
+            updateTableData();
         }
 
         function updateTableData() {
