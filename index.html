@@ -1089,8 +1089,8 @@
                         card.classList.add('selected', 'mandatory');
                     } 
                     
-                    // group8 필수 과목 3개 강제 선택 (새로 추가된 부분)
-                    else if (key === 'group8' && (sub.id === 'g8_1' || sub.id === 'g8_2')) {
+                    // group8 필수 과목 2개 강제 선택 (새로 추가된 부분)
+                    if (key === 'group8' && (sub.id === 'g8_1' || sub.id === 'g8_2')) {
                         card.classList.add('selected', 'mandatory');
                     }
                     
